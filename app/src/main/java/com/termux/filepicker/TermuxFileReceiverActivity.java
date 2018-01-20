@@ -26,8 +26,8 @@ import java.nio.charset.StandardCharsets;
 public class TermuxFileReceiverActivity extends Activity {
 
     static final String TERMUX_RECEIVEDIR = TermuxService.FILES_PATH + "/home/downloads";
-    static final String EDITOR_PROGRAM = TermuxService.HOME_PATH + "/bin/termux-file-editor";
-    static final String URL_OPENER_PROGRAM = TermuxService.HOME_PATH + "/bin/termux-url-opener";
+    static final String EDITOR_PROGRAM = TermuxService.HOME_PATH + "/.termux/bin/termux-file-editor";
+    static final String URL_OPENER_PROGRAM = TermuxService.HOME_PATH + "/.termux/bin/termux-url-opener";
 
     /**
      * If the activity should be finished when the name input dialog is dismissed. This is disabled
@@ -127,7 +127,7 @@ public class TermuxFileReceiverActivity extends Activity {
 
                     final File editorProgramFile = new File(EDITOR_PROGRAM);
                     if (!editorProgramFile.isFile()) {
-                        showErrorDialogAndQuit("The following file does not exist:\n$HOME/bin/termux-file-editor\n\n"
+                        showErrorDialogAndQuit("The following file does not exist:\n$HOME/.termux/bin/termux-file-editor\n\n"
                             + "Create this file as a script or a symlink - it will be called with the received file as only argument.");
                         return;
                     }
@@ -196,7 +196,7 @@ public class TermuxFileReceiverActivity extends Activity {
     void handleUrlAndFinish(final String url) {
         final File urlOpenerProgramFile = new File(URL_OPENER_PROGRAM);
         if (!urlOpenerProgramFile.isFile()) {
-            showErrorDialogAndQuit("The following file does not exist:\n$HOME/bin/termux-url-opener\n\n"
+            showErrorDialogAndQuit("The following file does not exist:\n$HOME/.termux/bin/termux-url-opener\n\n"
                 + "Create this file as a script or a symlink - it will be called with the shared URL as only argument.");
             return;
         }

@@ -9,9 +9,10 @@
     <uses-feature android:name="android.software.leanback" android:required="false" />
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:extractNativeLibs="true"
@@ -46,19 +47,11 @@
         </activity>
 
         <activity
-            android:name="com.termux.app.TermuxHelpActivity"
-            android:exported="false"
-            android:theme="@android:style/Theme.Material.Light.DarkActionBar"
-            android:parentActivityName=".app.TermuxActivity"
-            android:resizeableActivity="true"
-            android:label="@string/application_name" />
-
-        <activity
             android:name="com.termux.filepicker.TermuxFileReceiverActivity"
             android:label="@string/application_name"
             android:taskAffinity="com.termux.filereceiver"
-            android:excludeFromRecents="true"
             android:resizeableActivity="true"
+            android:excludeFromRecents="true"
             android:noHistory="true">
             <!-- Accept multiple file types when sending. -->
             <intent-filter>
@@ -109,6 +102,77 @@
 
         <service
             android:name="com.termux.app.TermuxService"
+            android:exported="false">
+        </service>
+
+        <receiver
+            android:name=".app.TermuxOpenReceiver">
+        </receiver>
+
+        <provider
+            android:authorities="com.termux.files"
+            android:readPermission="android.permission.permRead"
+            android:exported="true"
+            android:grantUriPermissions="true"
+            android:name="com.termux.app.TermuxOpenReceiver$ContentProvider">
+        </provider>
+
+        <!-- Termux:Boot -->
+        <receiver android:name=".boot.BootReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name=".boot.BootJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <!-- Termux:Styling -->
+        <activity
+            android:theme="@style/StylingDialogTheme"
+            android:name="com.termux.styling.TermuxStyleActivity"
+            android:noHistory="true"
+            android:exported="false" >
+        </activity>
+
+        <!-- Termux:Widget -->
+        <activity
+            android:name=".widget.TermuxCreateShortcutActivity"
+            android:label="@string/widget_single_shortcut_name"
+            android:theme="@android:style/Theme.Material.Light.DarkActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.CREATE_SHORTCUT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".widget.TermuxLaunchShortcutActivity"
+            android:theme="@android:style/Theme.NoDisplay"
+            android:noHistory="true"
+            android:exported="true">
+        </activity>
+
+        <receiver
+            android:name=".widget.TermuxWidgetProvider"
+            android:label="@string/widget_shortcut_name" >
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/termux_appwidget_info">
+            </meta-data>
+        </receiver>
+
+        <service
+            android:name=".widget.TermuxWidgetService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+
+        <service
+            android:name="com.termux.app.TermuxService"
             android:exported="false" />
 
         <receiver android:name=".app.TermuxOpenReceiver" />
@@ -121,5 +185,4 @@
 
         <meta-data android:name="com.sec.android.support.multiwindow" android:value="true" />
     </application>
-
 </manifest>

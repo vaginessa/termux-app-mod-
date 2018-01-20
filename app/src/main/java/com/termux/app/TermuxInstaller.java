@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.DialogInterface.OnDismissListener;
+import android.content.res.AssetManager;
 import android.os.Build;
 import android.os.Environment;
 import android.os.UserManager;
@@ -40,7 +41,7 @@ import java.util.zip.ZipInputStream;
  * <p/>
  * (3) A staging folder, $STAGING_PREFIX, is {@link #deleteFolder(File)} if left over from broken installation below.
  * <p/>
- * (4) The architecture is determined and an appropriate bootstrap zip url is determined in {@link #determineZipUrl()}.
+ * (4) The architecture is determined and an appropriate bootstrap zip name is determined in {@link #determineZipName()}.
  * <p/>
  * (5) The zip, containing entries relative to the $PREFIX, is is downloaded and extracted by a zip input stream
  * continuously encountering zip file entries:
@@ -89,8 +90,10 @@ final class TermuxInstaller {
                     final byte[] buffer = new byte[8096];
                     final List<Pair<String, String>> symlinks = new ArrayList<>(50);
 
-                    final URL zipUrl = determineZipUrl();
-                    try (ZipInputStream zipInput = new ZipInputStream(zipUrl.openStream())) {
+                    final String bootstrapArchiveName = determineZipName();
+                    AssetManager assetManager = activity.getAssets();
+
+                    try (ZipInputStream zipInput = new ZipInputStream(assetManager.open(bootstrapArchiveName))) {
                         ZipEntry zipEntry;
                         while ((zipEntry = zipInput.getNextEntry()) != null) {
                             if (zipEntry.getName().equals("SYMLINKS.txt")) {
@@ -183,9 +186,9 @@ final class TermuxInstaller {
     }
 
     /** Get bootstrap zip url for this systems cpu architecture. */
-    static URL determineZipUrl() throws MalformedURLException {
+    static String determineZipName() {
         String archName = determineTermuxArchName();
-        return new URL("https://termux.net/bootstrap/bootstrap-" + archName + ".zip");
+        return new String("bootstrap-" + archName);
     }
 
     private static String determineTermuxArchName() {
@@ -271,5 +274,4 @@ final class TermuxInstaller {
             }
         }.start();
     }
-
 }

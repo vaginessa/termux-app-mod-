@@ -95,6 +95,7 @@ public final class BackgroundJob {
 
     public static String[] buildEnvironment(boolean failSafe, String cwd) {
         new File(TermuxService.HOME_PATH).mkdirs();
+        new File(TermuxService.PREFIX_PATH + "/tmp").mkdirs();
 
         if (cwd == null) cwd = TermuxService.HOME_PATH;
 
@@ -106,6 +107,8 @@ public final class BackgroundJob {
         // EXTERNAL_STORAGE is needed for /system/bin/am to work on at least
         // Samsung S7 - see https://plus.google.com/110070148244138185604/posts/gp8Lk3aCGp3.
         final String externalStorageEnv = "EXTERNAL_STORAGE=" + System.getenv("EXTERNAL_STORAGE");
+        final String tmpdirEnv = "TMPDIR=" + TermuxService.PREFIX_PATH + "/tmp";
+
         if (failSafe) {
             // Keep the default path so that system binaries can be used in the failsafe session.
             final String pathEnv = "PATH=" + System.getenv("PATH");
@@ -116,7 +119,6 @@ public final class BackgroundJob {
             final String langEnv = "LANG=en_US.UTF-8";
             final String pathEnv = "PATH=" + TermuxService.PREFIX_PATH + "/bin:" + TermuxService.PREFIX_PATH + "/bin/applets";
             final String pwdEnv = "PWD=" + cwd;
-            final String tmpdirEnv = "TMPDIR=" + TermuxService.PREFIX_PATH + "/tmp";
 
             return new String[]{termEnv, homeEnv, prefixEnv, ps1Env, ldEnv, langEnv, pathEnv, pwdEnv, androidRootEnv, androidDataEnv, externalStorageEnv, tmpdirEnv};
         }

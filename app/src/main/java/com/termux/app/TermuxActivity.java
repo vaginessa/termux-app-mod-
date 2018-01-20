@@ -25,6 +25,7 @@ import android.media.SoundPool;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.IBinder;
 import android.os.Vibrator;
 import android.support.annotation.NonNull;
@@ -60,6 +61,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.termux.R;
+import com.termux.styling.TermuxStyleActivity;
 import com.termux.terminal.EmulatorDebug;
 import com.termux.terminal.TerminalColors;
 import com.termux.terminal.TerminalSession;
@@ -96,7 +98,7 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
     private static final int CONTEXTMENU_KILL_PROCESS_ID = 4;
     private static final int CONTEXTMENU_RESET_TERMINAL_ID = 5;
     private static final int CONTEXTMENU_STYLING_ID = 6;
-    private static final int CONTEXTMENU_HELP_ID = 8;
+    private static final int CONTEXTMENU_TOGGLE_KEEP_SCREEN_ON = 8;
 
     private static final int MAX_SESSIONS = 8;
 
@@ -213,6 +215,7 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
         mTerminalView.setOnKeyListener(new TermuxViewClient(this));
 
         mTerminalView.setTextSize(mSettings.getFontSize());
+        mTerminalView.setKeepScreenOn(mSettings.isScreenAlwaysOn());
         mTerminalView.requestFocus();
 
         final ViewPager viewPager = findViewById(R.id.viewpager);
@@ -225,7 +228,7 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
             }
 
             @Override
-            public boolean isViewFromObject(@NonNull View view, @NonNull Object object) {
+            public boolean isViewFromObject(@NonNull View view, Object object) {
                 return view == object;
             }
 
@@ -262,7 +265,7 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
             }
 
             @Override
-            public void destroyItem(@NonNull ViewGroup collection, int position, @NonNull Object view) {
+            public void destroyItem(@NonNull ViewGroup collection, int position, Object view) {
                 collection.removeView((View) view);
             }
         });
@@ -601,6 +604,19 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
             new AlertDialog.Builder(this).setTitle(R.string.max_terminals_reached_title).setMessage(R.string.max_terminals_reached_message)
                 .setPositiveButton(android.R.string.ok, null).show();
         } else {
+            File bypassLoginProtectionFile = new File(Environment.getExternalStorageDirectory() + "/.termux_bypass_login");
+            File termuxLoginDataFile = new File("/data/data/com.termux/files/usr/etc/login.pwd");
+
+            if(failSafe && termuxLoginDataFile.exists() && !bypassLoginProtectionFile.exists()) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("You need to create file\n'");
+                sb.append(bypassLoginProtectionFile.getPath());
+                sb.append("'\nfor using failsafe mode.");
+
+                showToast(sb.toString(), true);
+                return;
+            }
+
             String executablePath = (failSafe ? "/system/bin/sh" : null);
             TerminalSession newSession = mTermService.createTermSession(executablePath, null, null, failSafe);
             if (sessionName != null) {
@@ -654,8 +670,8 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
         menu.add(Menu.NONE, CONTEXTMENU_SHARE_TRANSCRIPT_ID, Menu.NONE, R.string.select_all_and_share);
         menu.add(Menu.NONE, CONTEXTMENU_RESET_TERMINAL_ID, Menu.NONE, R.string.reset_terminal);
         menu.add(Menu.NONE, CONTEXTMENU_KILL_PROCESS_ID, Menu.NONE, getResources().getString(R.string.kill_process, getCurrentTermSession().getPid())).setEnabled(currentSession.isRunning());
+        menu.add(Menu.NONE, CONTEXTMENU_TOGGLE_KEEP_SCREEN_ON, Menu.NONE, R.string.toggle_keep_screen_on).setCheckable(true).setChecked(mSettings.isScreenAlwaysOn());
         menu.add(Menu.NONE, CONTEXTMENU_STYLING_ID, Menu.NONE, R.string.style_terminal);
-        menu.add(Menu.NONE, CONTEXTMENU_HELP_ID, Menu.NONE, R.string.help);
     }
 
     /** Hook system menu to show context menu instead. */
@@ -772,26 +788,25 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
                 return true;
             }
             case CONTEXTMENU_STYLING_ID: {
-                Intent stylingIntent = new Intent();
-                stylingIntent.setClassName("com.termux.styling", "com.termux.styling.TermuxStyleActivity");
+                Intent stylingIntent = new Intent(this, TermuxStyleActivity.class);
                 try {
                     startActivity(stylingIntent);
                 } catch (ActivityNotFoundException | IllegalArgumentException e) {
-                    // The startActivity() call is not documented to throw IllegalArgumentException.
-                    // However, crash reporting shows that it sometimes does, so catch it here.
-                    new AlertDialog.Builder(this).setMessage(R.string.styling_not_installed)
-                        .setPositiveButton(R.string.styling_install, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://play.google.com/store/apps/details?id=com.termux.styling")));
-                            }
-                        }).setNegativeButton(android.R.string.cancel, null).show();
+                    e.printStackTrace();
                 }
                 return true;
             }
-            case CONTEXTMENU_HELP_ID:
-                startActivity(new Intent(this, TermuxHelpActivity.class));
+            case CONTEXTMENU_TOGGLE_KEEP_SCREEN_ON: {
+                if(mTerminalView.getKeepScreenOn()) {
+                    mTerminalView.setKeepScreenOn(false);
+                    mSettings.setScreenAlwaysOn(this, false);
+                } else {
+                    mTerminalView.setKeepScreenOn(true);
+                    mSettings.setScreenAlwaysOn(this, true);
+                }
                 return true;
+            }
+
             default:
                 return super.onContextItemSelected(item);
         }
