@@ -604,19 +604,6 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
             new AlertDialog.Builder(this).setTitle(R.string.max_terminals_reached_title).setMessage(R.string.max_terminals_reached_message)
                 .setPositiveButton(android.R.string.ok, null).show();
         } else {
-            File bypassLoginProtectionFile = new File(Environment.getExternalStorageDirectory() + "/.termux_bypass_login");
-            File termuxLoginDataFile = new File("/data/data/com.termux/files/usr/etc/login.pwd");
-
-            if(failSafe && termuxLoginDataFile.exists() && !bypassLoginProtectionFile.exists()) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("You need to create file\n'");
-                sb.append(bypassLoginProtectionFile.getPath());
-                sb.append("'\nfor using failsafe mode.");
-
-                showToast(sb.toString(), true);
-                return;
-            }
-
             String executablePath = (failSafe ? "/system/bin/sh" : null);
             TerminalSession newSession = mTermService.createTermSession(executablePath, null, null, failSafe);
             if (sessionName != null) {
